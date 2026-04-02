@@ -37,9 +37,9 @@ q - quit program"""
 def display_content():
     if not content or not show_cursor:
         print(content)
-        return
-    left, ch, right = content[:cursor], content[cursor], content[cursor + 1:]
-    print(f"{left}\033[42m{ch}\033[0m{right}")
+    else:
+        left, ch, right = content[:cursor], content[cursor], content[cursor + 1:]
+        print(f"{left}\033[42m{ch}\033[0m{right}")
 #.-highlight cursor position with green background 用绿色背景高亮光标位置
 def do_dot(text=""):
     global show_cursor
@@ -47,7 +47,7 @@ def do_dot(text=""):
 #l-move cursor left光标向左移动
 def do_h(text=""):
     global cursor
-    cursor =max(cursor - 1, 0)
+    cursor = max(cursor - 1, 0)
 #h-move cursor right光标向右移动
 def do_l(text=""):
     global cursor
@@ -63,66 +63,66 @@ def do_dollar(text=""):
 #w-move cursor to beginning of next word 移动到下一个单词开头
 def do_w(text=""):
     global cursor
-    if content == "" or cursor == len(content) - 1:
+    if not content or cursor == len(content) - 1:
         return
-    for i in range(cursor, len(content)-1):
-        if content[i]==" " and content[i+1] != " ":
+    for i in range(cursor, len(content) - 1):
+        if content[i] == " " and content[i + 1] != " ":
             cursor = i + 1
             return
     cursor = len(content) - 1
 #b-move cursor to beginning of current or previous word移动到当前或前一个单词开头
 def do_b(text=""):
     global cursor
-    if content == "" or cursor == 0:
+    if not content or cursor == 0:
         return
-    for i in range(cursor-1, 0, -1):
-        if content[i-1]==" " and content[i] != " ":
+    for i in range(cursor - 1, 0, -1):
+        if content[i - 1] == " " and content[i] != " ":
             cursor = i
             return
     cursor = 0
 #e-move cursor to end of the word移动到单词结尾
 def do_e(text=""):
     global cursor
-    if content == "" or cursor == len(content) - 1:
+    if not content or cursor == len(content) - 1:
         return
-    for i in range(cursor+1, len(content)-1):
-        if content[i] != " " and content[i+1] == " ":
+    for i in range(cursor + 1, len(content) - 1):
+        if content[i] != " " and content[i + 1] == " ":
             cursor = i
             return
     cursor = len(content) - 1
 #i-insert text before cursor在光标前插入文本
 def do_i(text):
-    global content,cursor
+    global content, cursor
     content = content[:cursor] + text + content[cursor:]
 #a-append text after cursor在光标后插入文本
 def do_a(text):
-    global content,cursor
-    if len(content) == 0:
+    global content, cursor
+    if not content:
         content = text
         cursor = len(content) - 1
     else:
-        content = content[:cursor+1] + text + content[cursor+1:]
+        content = content[:cursor + 1] + text + content[cursor + 1:]
         cursor += len(text)
 #I-insert text from beginning从行首插入文本
 def do_I(text):
-    global content,cursor
+    global content, cursor
     content = text + content
-    cursor =0
+    cursor = 0
 #A-append text at the end在行尾插入文本
 def do_A(text):
-    global content,cursor
-    content = content + text
-    cursor =len(content) - 1
+    global content, cursor
+    content += text
+    cursor = len(content) - 1
 #x-delete character at cursor删除光标所在字符
 def do_x(text=""):
-    global content,cursor
+    global content, cursor
     if not content:
         return
     content = content[:cursor] + content[cursor + 1:]
     cursor = min(cursor, len(content) - 1) if content else 0
 #X-delete character before cursor删除光标前字符
 def do_X(text=""):
-    global content,cursor
+    global content, cursor
     if cursor == 0 or not content:
         return
     content = content[:cursor - 1] + content[cursor:]
@@ -132,32 +132,28 @@ def delete_range(start, end):
     global content, cursor
     if start > end:
         start, end = end, start
-    # 保证至少删除一个字符
     if start == end:
-        end = start + 1
+        end += 1
     content = content[:start] + content[end:]
-    cursor = start if start < len(content) else len(content) - 1 if content else 0
+    cursor = start if start < len(content) else (len(content) - 1 if content else 0)
 #dw-delete to the beginning of the next word删除到下一个单词开头
 def do_dw(text=""):
     global cursor
     start = cursor
     do_w()
-    end = cursor
-    delete_range(start, end)
+    delete_range(start, cursor)
 #de-delete to the end of the next word删除到下一个单词结尾
 def do_de(text=""):
     global cursor
     start = cursor
     do_e()
-    end = cursor + 1
-    delete_range(start, end)
+    delete_range(start, cursor + 1)
 #db-delete to the beginning of the current or previous word删除到当前或前一个单词开头
 def do_db(text=""):
     global cursor
-    start = cursor+1
+    start = cursor + 1
     do_b()
-    end = cursor
-    delete_range(end, start)
+    delete_range(cursor, start)
 #dc-delete white spaces or entire word at cursor删除光标所在的空格或整个单词
 def do_dc(text=""):
     global cursor, content
@@ -171,13 +167,6 @@ def do_dc(text=""):
         right = cursor
         while right < len(content) and content[right] == " ":
             right += 1
-        delete_range(left, right)
-        if len(content) == 0:
-            cursor = 0
-        elif old_cursor < len(content):
-            cursor = old_cursor
-        else:
-            cursor = len(content) - 1
     else:
         left = cursor
         while left > 0 and content[left - 1] != " ":
@@ -185,13 +174,13 @@ def do_dc(text=""):
         right = cursor
         while right < len(content) and content[right] != " ":
             right += 1
-        delete_range(left, right)
-        if len(content) == 0:
-            cursor = 0
-        elif old_cursor < len(content):
-            cursor = old_cursor
-        else:
-            cursor = len(content) - 1
+    delete_range(left, right)
+    if not content:
+        cursor = 0
+    elif old_cursor < len(content):
+        cursor = old_cursor
+    else:
+        cursor = len(content) - 1
 #sw-swap word at cursor with next word交换光标所在单词与下一个单词
 def do_sw(text=""):
     global cursor, content
@@ -214,13 +203,7 @@ def do_sw(text=""):
         right_b += 1
     word_a = content[left_a:right_a]
     word_b = content[left_b:right_b]
-    content = (
-        content[:left_a] +
-        word_b +
-        content[right_a:left_b] +
-        word_a +
-        content[right_b:]
-    )
+    content = content[:left_a] + word_b + content[right_a:left_b] + word_a + content[right_b:]
     new_a_left = left_a + len(word_b) + (left_b - right_a)
     cursor = new_a_left + min(offset, len(word_a) - 1)
 #sb-swap word at cursor with previous word交换光标所在单词与前一个单词
@@ -247,13 +230,7 @@ def do_sb(text=""):
         return
     word_a = content[left_a:right_a]
     word_b = content[left_b:right_b]
-    content = (
-        content[:left_b] +
-        word_a +
-        content[right_b:left_a] +
-        word_b +
-        content[right_a:]
-    )
+    content = content[:left_b] + word_a + content[right_b:left_a] + word_b + content[right_a:]
     cursor = left_b + min(offset, len(word_a) - 1)
 #v-view editor content查看编辑内容
 def do_v(text=""):
