@@ -1,14 +1,16 @@
 #written at the beginning You must see my brilliant dictionary handling method
 #写在前面 你一定要看看我天才的字典处理法
+#the final version followed pep8
 import re
-#general environment variables for the editor编辑器的通用环境变量
-content = ""          # Current editind content 当前编辑内容
-cursor = 0            # Cursor's position 光标位置
-show_cursor = True    # Row cursor default enabled 行光标默认开启
+# General environment variables for the editor 编辑器的通用环境变量
+content = ""  # Current editing content 当前编辑内容
+cursor = 0  # Cursor's position 光标位置
+show_cursor = True  # Row cursor default enabled 行光标默认开启
 #display help info显示帮助信息
 def display_help_info():
-    print("""? - display this help info
-. - toggle row cursor on and off
+    print(
+        """? - display this help info
+.- toggle row cursor on and off
 h - move cursor left
 l - move cursor right
 ^ - move cursor to beginning of the line
@@ -29,14 +31,14 @@ dc - delete whitepaces or entire word at cursor
 sw - swap word at cursor with next word
 sb - swap word at cursor with previous word
 v - view editor content
-q - quit program""")
-    
+q - quit program"""
+    )
 #?-display content 显示内容
 def display_content():
     if not content or not show_cursor:
         print(content)
         return
-    left , ch , right= content[:cursor], content[cursor], content[cursor + 1:]
+    left, ch, right = content[:cursor], content[cursor], content[cursor + 1:]
     print(f"{left}\033[42m{ch}\033[0m{right}")
 #.-highlight cursor position with green background 用绿色背景高亮光标位置
 def do_dot(text=""):
@@ -125,15 +127,16 @@ def do_X(text=""):
         return
     content = content[:cursor - 1] + content[cursor:]
     cursor -= 1
-
 #delete a range of text from start to end 删除从start到end的文本
 def delete_range(start, end):
     global content, cursor
     if start > end:
         start, end = end, start
+    # 保证至少删除一个字符
+    if start == end:
+        end = start + 1
     content = content[:start] + content[end:]
     cursor = start if start < len(content) else len(content) - 1 if content else 0
-
 #dw-delete to the beginning of the next word删除到下一个单词开头
 def do_dw(text=""):
     global cursor
@@ -141,7 +144,6 @@ def do_dw(text=""):
     do_w()
     end = cursor
     delete_range(start, end)
-
 #de-delete to the end of the next word删除到下一个单词结尾
 def do_de(text=""):
     global cursor
@@ -149,7 +151,6 @@ def do_de(text=""):
     do_e()
     end = cursor + 1
     delete_range(start, end)
-
 #db-delete to the beginning of the current or previous word删除到当前或前一个单词开头
 def do_db(text=""):
     global cursor
@@ -157,12 +158,12 @@ def do_db(text=""):
     do_b()
     end = cursor
     delete_range(end, start)
-
 #dc-delete white spaces or entire word at cursor删除光标所在的空格或整个单词
 def do_dc(text=""):
     global cursor, content
     if not content:
         return
+    old_cursor = cursor
     if content[cursor] == " ":
         left = cursor
         while left > 0 and content[left - 1] == " ":
@@ -171,6 +172,12 @@ def do_dc(text=""):
         while right < len(content) and content[right] == " ":
             right += 1
         delete_range(left, right)
+        if len(content) == 0:
+            cursor = 0
+        elif old_cursor < len(content):
+            cursor = old_cursor
+        else:
+            cursor = len(content) - 1
     else:
         left = cursor
         while left > 0 and content[left - 1] != " ":
@@ -179,7 +186,12 @@ def do_dc(text=""):
         while right < len(content) and content[right] != " ":
             right += 1
         delete_range(left, right)
-
+        if len(content) == 0:
+            cursor = 0
+        elif old_cursor < len(content):
+            cursor = old_cursor
+        else:
+            cursor = len(content) - 1
 #sw-swap word at cursor with next word交换光标所在单词与下一个单词
 def do_sw(text=""):
     global cursor, content
@@ -211,7 +223,6 @@ def do_sw(text=""):
     )
     new_a_left = left_a + len(word_b) + (left_b - right_a)
     cursor = new_a_left + min(offset, len(word_a) - 1)
-
 #sb-swap word at cursor with previous word交换光标所在单词与前一个单词
 def do_sb(text=""):
     global cursor, content
@@ -244,7 +255,6 @@ def do_sb(text=""):
         content[right_a:]
     )
     cursor = left_b + min(offset, len(word_a) - 1)
-
 #v-view editor content查看编辑内容
 def do_v(text=""):
     return None
@@ -275,15 +285,19 @@ def parse_command(user_input):
         return None, None
     return cmd, text
 #main loop 程序主循环
-while True:
-    user_input = input(">")
-    cmd , text = parse_command(user_input)
-    if cmd is None and text is None:
-        continue
-    elif cmd == "q":
-        break
-    elif cmd == "?":
-        display_help_info()
-    else:
-        command_handlers[cmd](text)
-        display_content()
+def main():
+    while True:
+        user_input = input(">")
+        cmd, text = parse_command(user_input)
+        if cmd is None and text is None:
+            continue
+        elif cmd == "q":
+            break
+        elif cmd == "?":
+            display_help_info()
+        else:
+            command_handlers[cmd](text)
+            display_content()
+
+if __name__ == "__main__":
+    main()
