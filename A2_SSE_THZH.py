@@ -244,7 +244,7 @@ command_handlers = {
     'a': do_a,'I': do_I,'A': do_A,
     'x': do_x,'X': do_X,'dw': do_dw,'de': do_de,
     'db': do_db,'dc': do_dc,'sw': do_sw,'sb': do_sb,
-    'v': do_v,
+    'v': do_v,'q':None
 }
 #interpret user's command and solve with error handling 解释用户输入的命令并进行错误处理
 def parse_command(user_input):
