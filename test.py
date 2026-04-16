@@ -3,6 +3,7 @@
 Usage:
     python test.py
     python test.py /path/to/A3_SSE_125091035.py
+直接修改代码第53行的A3_SSE_THZH.py为你的文件，即可运行使用
 """
 
 from __future__ import annotations
@@ -49,7 +50,7 @@ q - quit program"""
 def resolve_target() -> Path:
     if len(sys.argv) > 1:
         return Path(sys.argv[1]).resolve()
-    return Path(__file__).with_name("A3_SSE_125091035.py").resolve()
+    return Path(__file__).with_name("A3_SSE_THZH.py").resolve()
 
 
 def run_session(target: Path, commands: list[str]) -> str:
