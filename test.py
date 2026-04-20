@@ -3,7 +3,6 @@
 Usage:
     python test.py
     python test.py /path/to/A3_SSE_125091035.py
-直接修改代码第53行的A3_SSE_THZH.py为你的文件，即可运行使用
 """
 
 from __future__ import annotations
@@ -50,7 +49,7 @@ q - quit program"""
 def resolve_target() -> Path:
     if len(sys.argv) > 1:
         return Path(sys.argv[1]).resolve()
-    return Path(__file__).with_name("A3_SSE_THZH.py").resolve()
+    return Path(__file__).with_name("A3_SSE_125091035.py").resolve()
 
 
 def run_session(target: Path, commands: list[str]) -> str:
@@ -107,12 +106,36 @@ def assert_equal(name: str, actual, expected) -> None:
         raise AssertionError(f"{name} failed\nactual: {actual!r}\nexpected: {expected!r}")
 
 
+def first_diff_index(actual, expected):
+    limit = min(len(actual), len(expected))
+    for idx in range(limit):
+        if actual[idx] != expected[idx]:
+            return idx
+    return None if len(actual) == len(expected) else limit
+
+
+def build_case_failure(name: str, commands: list[str], actual: list[str], expected: list[str]) -> str:
+    idx = first_diff_index(actual, expected)
+    if idx is None:
+        return f"{name} failed (unknown diff)"
+    command = commands[idx] if idx < len(commands) else "<NO_COMMAND>"
+    actual_seg = actual[idx] if idx < len(actual) else "<NO_SEGMENT>"
+    expected_seg = expected[idx] if idx < len(expected) else "<NO_SEGMENT>"
+    return (
+        f"{name} failed at step {idx + 1}\n"
+        f"command: {command!r}\n"
+        f"actual_segment: {actual_seg!r}\n"
+        f"expected_segment: {expected_seg!r}"
+    )
+
+
 def run_case(target: Path, name: str, commands: list[str], expected: list[str]) -> None:
     output = run_session(target, commands)
     actual = split_segments(output, len(commands))
     actual = [strip_row_cursor_ansi(item) for item in actual]
     expected = [strip_row_cursor_ansi(item) for item in expected]
-    assert_equal(name, actual, expected)
+    if actual != expected:
+        raise AssertionError(build_case_failure(name, commands, actual, expected))
     print(f"[PASS] {name}")
 
 
@@ -254,10 +277,148 @@ SAMPLE_CASES = {
     ),
 }
 
+    
+A2HW_CASES = {
+    'a00': (
+        ['?', '.', '.', ';', ';', 'a', 'i', 'A', 'I', '^', '$', 'h', 'j', 'k', 'l', 'w', 'b', 'e', 'dw', 'de', 'db', 'dc', 'ds', 'yw', 'ye', 'yb', 'yc', 'ys', 'sw', 'sb', 'cr', 'cl', 'p', 'P', 's', 'm', 'J', 'K', 'p', 'P', 'hello from kinley', 'o ', 'O ', 'yy ', 's ', 'm ', '666 ', 'v', '.', 'ipassed', 'q'],
+        'passed',
+    ),
+    'a01': (
+        ['ia b c', 'w', 'w', 'w', 'w', 'x', 'x', '.', 'q'],
+        'a b',
+    ),
+    'a02': (
+        ['ia b c', 'e', 'e', 'e', 'e', 'x', 'x', '.', 'q'],
+        'a b',
+    ),
+    'a03': (
+        ['ia ', 'w', 'x', '.', 'q'],
+        'a',
+    ),
+    'a04': (
+        ['i   a ', 'e', 'e', 'x', '.', 'q'],
+        '   a',
+    ),
+    'b01': (
+        ['i  %&^%one(*&())   %&^two!@#$   three', 'w', 'w', 'l', 'l', 'x', '.', 'q'],
+        '  %&^%one(*&())   %&two!@#$   three',
+    ),
+    'b02': (
+        ['i  %&^%one(*&())   %&^two!@#$   three', 'e', 'e', 'h', 'h', 'x', '.', 'q'],
+        '  %&^%one(*&())   %&^two!#$   three',
+    ),
+    'b03': (
+        ['a  %&^%one(*&())   %&^two!@#$   three', 'b', 'b', 'b', 'l', 'l', 'x', '.', 'q'],
+        '  %&%one(*&())   %&^two!@#$   three',
+    ),
+    'db1': (
+        ['Aone two three', 'db', '.', 'x', 'q'],
+        'one two',
+    ),
+    'db2': (
+        ['I     one two three', 'w', 'h', 'db', 'x', '.', 'q'],
+        'ne two three',
+    ),
+    'db3': (
+        ['Aone two three     ', 'db', 'x', '.', 'q'],
+        'one two',
+    ),
+    'dc1': (
+        ['ione two three', 'dc', 'w', 'dc', 'w', 'dc', 'Apassed', 'Ipassed', '.', 'q'],
+        'passed  passed',
+    ),
+    'dc2': (
+        ['i  one  two  three     ', 'dc', 'w', 'h', 'dc', 'w', 'h', 'dc', 'w', 'h', 'dc', '.', 'q'],
+        'onetwothree',
+    ),
+    'dc3': (
+        ['ione one one one', 'w', 'w', 'w', 'sb', 'dc', 'x', '.', 'q'],
+        'one one one',
+    ),
+    'dc4': (
+        ['ia   b', 'l', 'dc', '.', 'q'],
+        'ab',
+    ),
+    'dc5': (
+        ['aa    ', 'dc', '.', 'q'],
+        'a',
+    ),
+    'de1': (
+        ['ione two three', 'de', '.', 'ipassed', 'q'],
+        'passed two three',
+    ),
+    'de2': (
+        ['i   one two three', 'de', '.', 'ipassed', 'q'],
+        'passed two three',
+    ),
+    'de3': (
+        ['Aone two three    ', 'b', 'e', 'de', '.', 'q'],
+        'one two thre',
+    ),
+    'dw1': (
+        ['ione two three', 'dw', '.', 'x', 'q'],
+        'wo three',
+    ),
+    'dw2': (
+        ['i  one two three', 'dw', '.', 'q'],
+        'one two three',
+    ),
+    'dw3': (
+        ['aone two three    ', 'b', 'dw', '.', 'apassed', 'q'],
+        'one two passed',
+    ),
+    'sb1': (
+        ['ione two three', 'w', 'sb', '.', 'q'],
+        'two one three',
+    ),
+    'sb2': (
+        ['ione  two   three', 'w', 'w', 'sb', 'sb', '.', 'x', 'q'],
+        'hree  one   two',
+    ),
+    'sw1': (
+        ['ione  two   three', 'sw', 'sw', '.', 'q'],
+        'two  three   one',
+    ),
+    'sw2': (
+        ['ione  two  three', 'sw', 'sw', '.', 'x', 'q'],
+        'two  three  ne',
+    ),
+    'sw3': (
+        ['ioneoneone  one  oneone', 'w', 'sw', 'x', 'b', 'sw', '.', 'x', 'q'],
+        'oneoneone  ne  neone',
+    ),
+    'sw4': (
+        ['ione  two  three', 'w', 'h', 'sw', '$', 'b', 'h', 'sw', '.', 'q'],
+        'one  two  three',
+    ),
+}
+
 
 def run_a3_sample(target: Path, no: int) -> None:
     commands, expected = SAMPLE_CASES[no]
     run_case(target, f"A3_test_{no}", commands, expected)
+
+
+def final_visible_content(segments: list[str]) -> str:
+    for segment in reversed(segments[:-1]):
+        if segment == "":
+            continue
+        return segment.rstrip("\n")
+    return ""
+
+
+def run_a2hw_case(target: Path, case_key: str, commands: list[str], expected_final: str) -> None:
+    output = run_session(target, commands)
+    actual = split_segments(output, len(commands))
+    actual = [strip_row_cursor_ansi(item) for item in actual]
+    actual_final = final_visible_content(actual)
+    if actual_final != expected_final:
+        raise AssertionError(
+            f"A2HW_({case_key}) failed\n"
+            f"actual_final: {actual_final!r}\n"
+            f"expected_final: {expected_final!r}"
+        )
+    print(f"[PASS] A2HW_({case_key})")
 
 
 def A3_test_13(target: Path) -> None:
@@ -415,10 +576,40 @@ def main() -> None:
     ]
 
     passed = 0
+    failed = []
     for test_func in tests:
-        test_func(target)
-        passed += 1
-    print(f"All tests passed: {passed}/{len(tests)}")
+        try:
+            test_func(target)
+            passed += 1
+        except AssertionError as error:
+            failed.append((test_func.__name__, str(error)))
+            print(f"[FAIL] {test_func.__name__}")
+            print(str(error))
+        except Exception as error:
+            failed.append((test_func.__name__, f"unexpected error: {error}"))
+            print(f"[ERROR] {test_func.__name__}")
+            print(f"unexpected error: {error}")
+    for case_key in sorted(A2HW_CASES):
+        commands, expected_final = A2HW_CASES[case_key]
+        case_name = f"A2HW_({case_key})"
+        try:
+            run_a2hw_case(target, case_key, commands, expected_final)
+            passed += 1
+        except AssertionError as error:
+            failed.append((case_name, str(error)))
+            print(f"[FAIL] {case_name}")
+            print(str(error))
+        except Exception as error:
+            failed.append((case_name, f"unexpected error: {error}"))
+            print(f"[ERROR] {case_name}")
+            print(f"unexpected error: {error}")
+    total = len(tests) + len(A2HW_CASES)
+    print(f"Summary: passed={passed}, failed={len(failed)}, total={total}")
+    if failed:
+        print("Failed cases:")
+        for name, message in failed:
+            print(f"- {name}: {message.splitlines()[0]}")
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":
