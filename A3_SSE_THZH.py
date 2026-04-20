@@ -97,12 +97,9 @@ def next_word_start(text, col):
 def prev_word_start(text, col):
     if not text or col == 0:return 0
     probe = min(col, len(text) - 1)
-    if text[probe] != " " and text[probe - 1] == " ":
-        probe -= 1
-    while probe > 0 and text[probe] == " ":
-        probe -= 1
-    while probe > 0 and text[probe - 1] != " ":
-        probe -= 1
+    probe -= 1 if text[probe] != " " and text[probe - 1] == " " else 0
+    while probe > 0 and text[probe] == " ": probe -= 1
+    while probe > 0 and text[probe - 1] != " ": probe -= 1
     return probe
 
 
@@ -385,6 +382,13 @@ def do_de(state, _=""):
     start = state["col"]
     do_e(state)
     apply_delete(state, start, state["col"] + 1)
+    fix_de_head_insert(state, start)
+
+
+def fix_de_head_insert(state, start):
+    line = current_line(state)
+    if start == 0 and line.startswith(" ") and not line.startswith("  "):
+        state["col"] = 0
 
 
 # Delete backward to previous word start, 向后删除到前一个单词开头
@@ -426,13 +430,11 @@ def swap_text_rev(line, left_a, right_a, left_b, right_b):
 
 # Swap current word with target word provider, 按目标边界策略交换当前单词
 def swap_with(state, bounds_getter):
-    line, col = current_line(state), state["col"]
-    first = word_bounds(line, col)
-    if first is None:
-        return
+    line = current_line(state)
+    first = word_bounds(line, state["col"])
+    if first is None:return
     second = bounds_getter(line, first[0], first[1])
-    if second is None:
-        return
+    if second is None:return
     apply_swap(state, line, first, second)
 
 
@@ -520,12 +522,9 @@ def parse_command(user_input):
 # Parse non-numeric command patterns, 解析非数字命令格式
 def parse_non_numeric(user_input):
     cmd = user_input[0]
-    if cmd in TEXT_COMMANDS and len(user_input) > 1:
-        return cmd, user_input[1:]
-    if len(user_input) == 2 and user_input in DOUBLE_COMMANDS:
-        return user_input, ""
-    if len(user_input) == 1 and cmd in SINGLE_COMMANDS:
-        return cmd, ""
+    if cmd in TEXT_COMMANDS and len(user_input) > 1:return cmd, user_input[1:]
+    if len(user_input) == 2 and user_input in DOUBLE_COMMANDS:return user_input, ""
+    if len(user_input) == 1 and cmd in SINGLE_COMMANDS:return cmd, ""
     return None, None
 
 
@@ -535,11 +534,6 @@ def run_command(state, handlers, command, text):
         do_line_no(state, int(command))
         return
     handlers[command](state, text)
-
-
-# Check whether output should be skipped, 判断是否应跳过内容输出
-def should_skip_output(command):
-    return command in {"?", "q"}
 
 
 # Read one input and parse it, 读取一条输入并解析
@@ -553,31 +547,29 @@ def handle_command(state, handlers, command, text):
         display_help()
         return
     run_command(state, handlers, command, text)
-    if not should_skip_output(command):
+    if not (command in {"?", "q"}):
         display_content(state)
 
 
-# Build command-to-function mapping, 构建命令到函数的映射表
-def build_handlers():
-    return {
-        ".": do_dot, ";": do_semicolon, "h": do_h, "l": do_l, "^": do_caret,
-        "$": do_dollar, "w": do_w, "b": do_b, "e": do_e, "j": do_j, "k": do_k,
-        "i": do_i, "a": do_a, "I": do_I, "A": do_A, "o": do_o, "O": do_O,
-        "x": do_x, "X": do_X, "dw": do_dw, "de": do_de, "db": do_db,
-        "dc": do_dc, "dd": do_dd, "sw": do_sw, "sb": do_sb,
-        "J": do_move_line_up, "K": do_move_line_down, "v": do_v,
-    }
+# Build command-to-function mapping in HELP_TEXT order, 按 HELP_TEXT 顺序构建映射
+build_handlers = {
+    ".": do_dot, ";": do_semicolon,
+    "h": do_h, "l": do_l, "^": do_caret, "$": do_dollar, "w": do_w, "b": do_b, "e": do_e,
+    "j": do_j, "k": do_k,
+    "i": do_i, "a": do_a, "I": do_I, "A": do_A, "o": do_o, "O": do_O,
+    "x": do_x, "X": do_X, "dw": do_dw, "de": do_de, "db": do_db, "dc": do_dc, "dd": do_dd,
+    "sw": do_sw, "sb": do_sb, "J": do_move_line_up, "K": do_move_line_down,
+    "v": do_v,
+}
 
 
 # Run the editor main loop, 运行编辑器主循环
 def main():
-    state, handlers = make_state(), build_handlers()
+    state, handlers = make_state(), build_handlers
     while True:
         command, text = read_parsed_command()
-        if command is None:
-            continue
-        if command == "q":
-            break
+        if command is None:continue
+        if command == "q":break
         handle_command(state, handlers, command, text)
 
 
