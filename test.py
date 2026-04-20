@@ -49,7 +49,7 @@ q - quit program"""
 def resolve_target() -> Path:
     if len(sys.argv) > 1:
         return Path(sys.argv[1]).resolve()
-    return Path(__file__).with_name("A3_SSE_125091035.py").resolve()
+    return Path(__file__).with_name("A3_SSE_THZH.py").resolve()
 
 
 def run_session(target: Path, commands: list[str]) -> str:
