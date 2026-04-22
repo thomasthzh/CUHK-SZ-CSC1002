@@ -7,6 +7,7 @@ Usage:
 
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -49,7 +50,7 @@ q - quit program"""
 def resolve_target() -> Path:
     if len(sys.argv) > 1:
         return Path(sys.argv[1]).resolve()
-    return Path(__file__).with_name("A3_SSE_THZH.py").resolve()
+    return Path(__file__).with_name(".py").resolve()
 
 
 def run_session(target: Path, commands: list[str]) -> str:
@@ -69,7 +70,12 @@ def run_session(target: Path, commands: list[str]) -> str:
             f"Program exited with code {result.returncode}\n"
             f"stderr:\n{result.stderr.decode('utf-8', errors='replace')}"
         )
-    return result.stdout.decode("utf-8", errors="replace")
+    text = result.stdout.decode("utf-8", errors="replace")
+    return normalize_line_endings(text)
+
+
+def normalize_line_endings(text: str) -> str:
+    return text.replace("\r\n", "\n").replace("\r", "\n")
 
 
 def prompt_positions(output: str) -> list[int]:
@@ -97,8 +103,12 @@ def split_segments(output: str, command_count: int) -> list[str]:
     return segments
 
 
-def strip_row_cursor_ansi(text: str) -> str:
-    return text.replace("\033[42m", "").replace("\033[0m", "")
+def strip_ansi(text: str) -> str:
+    return re.sub(r"\x1b\[[0-9;]*m", "", text)
+
+
+def normalize_segment(text: str) -> str:
+    return strip_ansi(normalize_line_endings(text))
 
 
 def assert_equal(name: str, actual, expected) -> None:
@@ -130,10 +140,15 @@ def build_case_failure(name: str, commands: list[str], actual: list[str], expect
 
 
 def run_case(target: Path, name: str, commands: list[str], expected: list[str]) -> None:
+    if len(commands) != len(expected):
+        raise AssertionError(
+            f"{name} invalid case shape\n"
+            f"commands={len(commands)}, expected={len(expected)}"
+        )
     output = run_session(target, commands)
     actual = split_segments(output, len(commands))
-    actual = [strip_row_cursor_ansi(item) for item in actual]
-    expected = [strip_row_cursor_ansi(item) for item in expected]
+    actual = [normalize_segment(item) for item in actual]
+    expected = [normalize_segment(item) for item in expected]
     if actual != expected:
         raise AssertionError(build_case_failure(name, commands, actual, expected))
     print(f"[PASS] {name}")
@@ -410,8 +425,9 @@ def final_visible_content(segments: list[str]) -> str:
 def run_a2hw_case(target: Path, case_key: str, commands: list[str], expected_final: str) -> None:
     output = run_session(target, commands)
     actual = split_segments(output, len(commands))
-    actual = [strip_row_cursor_ansi(item) for item in actual]
-    actual_final = final_visible_content(actual)
+    actual = [normalize_segment(item) for item in actual]
+    actual_final = normalize_segment(final_visible_content(actual))
+    expected_final = normalize_segment(expected_final)
     if actual_final != expected_final:
         raise AssertionError(
             f"A2HW_({case_key}) failed\n"
