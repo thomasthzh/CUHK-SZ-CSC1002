@@ -15,34 +15,34 @@ from pathlib import Path
 
 HELP_TEXT = """? - display this help info
 . - toggle row cursor on and off
-; - toggle line cursor on and off
 h - move cursor left
 l - move cursor right
-^ - move cursor to beginning of line
-$ - move cursor to end of line
+^ - move cursor to beginning of the line
+$ - move cursor to end of the line
 w - move cursor to beginning of next word
 b - move cursor to beginning of current or previous word
-e - move cursor to end of current or next word
-j - move to line above
-k - move to line below
+e - move cursor to end of the word
 i - insert <text> before cursor
 a - append <text> after cursor
-I - insert <text> at beginning of line
-A - append <text> at end of line
-o - insert empty line below current line
-O - insert empty line above current line
+I - insert <text> from beginning
+A - append <text> at the end
 x - delete character at cursor
 X - delete character before cursor
 dw - delete to start of next word
-de - delete to end of word
+de - delete to end of next word
 db - delete to start of current or previous word
-dc - delete spaces or entire word at cursor
-dd - delete current line
+dc - delete whitespaces or entire word at cursor
 sw - swap word at cursor with next word
 sb - swap word at cursor with previous word
-J - move current line up
-K - move current line down
-<Line_No.> - jump to line number
+; - toggle line cursor on and off
+j - move cursor up
+k - move cursor down
+o - insert empty line below
+O - insert empty line above
+dd - delete line
+J - move line up
+K - move line down
+Line_No. - jump to specific line, first character
 v - view editor content
 q - quit program"""
 
@@ -50,7 +50,7 @@ q - quit program"""
 def resolve_target() -> Path:
     if len(sys.argv) > 1:
         return Path(sys.argv[1]).resolve()
-    return Path(__file__).with_name(".py").resolve()
+    return Path(__file__).with_name("A3_SSE_125091035.py").resolve()
 
 
 def run_session(target: Path, commands: list[str]) -> str:
@@ -233,13 +233,32 @@ def test_line_cursor_render(target: Path) -> None:
     run_case(target, "line-cursor-render", commands, expected)
 
 
+def ZZY_TP1(target: Path) -> None:
+    commands = ["i12345", "o", "12345", ";", "O", "i12321", "i21312", "i3123", "i213213", "o", "i213123", ";", ";", "j", "l", "l", "l", "l", "l", "l", "l", "l", "l", "x", "3", "x", "1", "x", "q"]
+    expected = [
+        "12345\n", "12345\n\n", "12345\n\n", " 12345\n*\n", " 12345\n*\n \n",
+        " 12345\n*12321\n \n", " 12345\n*2131212321\n \n", " 12345\n*31232131212321\n \n",
+        " 12345\n*21321331232131212321\n \n", " 12345\n 21321331232131212321\n*\n \n",
+        " 12345\n 21321331232131212321\n*213123\n \n", "12345\n21321331232131212321\n213123\n\n",
+        " 12345\n 21321331232131212321\n*213123\n \n", " 12345\n*21321331232131212321\n 213123\n \n",
+        " 12345\n*21321331232131212321\n 213123\n \n", " 12345\n*21321331232131212321\n 213123\n \n",
+        " 12345\n*21321331232131212321\n 213123\n \n", " 12345\n*21321331232131212321\n 213123\n \n",
+        " 12345\n*21321331232131212321\n 213123\n \n", " 12345\n*21321331232131212321\n 213123\n \n",
+        " 12345\n*21321331232131212321\n 213123\n \n", " 12345\n*21321331232131212321\n 213123\n \n",
+        " 12345\n*21321331232131212321\n 213123\n \n", " 12345\n*2132133122131212321\n 213123\n \n",
+        " 12345\n 2132133122131212321\n*213123\n \n", " 12345\n 2132133122131212321\n*13123\n \n",
+        "*12345\n 2132133122131212321\n 13123\n \n", "*2345\n 2132133122131212321\n 13123\n \n", "",
+    ]
+    run_case(target, "ZZY_TP1", commands, expected)
+
+
 SAMPLE_CASES = {
     13: (
-        ["a  one  two  three", "^", "de", "l", "l", "l", "l", "de", "de", "^", "de"],
+        ["a  one  two three", "^", "de", "l", "l", "l", "l", "de", "de", "^", "de"],
         [
-            "  one  two  three\n", "  one  two  three\n", "  two  three\n", "  two  three\n",
-            "  two  three\n", "  two  three\n", "  two  three\n", "  two  t\n",
-            "  two  \n", "  two  \n", "  \n",
+            "  one  two three\n", "  one  two three\n", "  two three\n", "  two three\n",
+            "  two three\n", "  two three\n", "  two three\n", "  tw\n",
+            "  t\n", "  t\n", "\n",
         ],
     ),
     14: (
@@ -573,6 +592,7 @@ def main() -> None:
         test_b_repeat_from_word_start,
         test_multiline_and_line_movement,
         test_line_cursor_render,
+        ZZY_TP1,
         A3_test_13,
         A3_test_14,
         A3_test_15,
